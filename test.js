@@ -150,14 +150,14 @@ async function quickSearchWithDecoding(topic, maxResults = 5) {
 async function main() {
     try {
         // Run comprehensive tests
-        await testIntegratedSearcher();
+        // await testIntegratedSearcher();
         
         // Test URL decoding specifically
-        await testSpecificUrls();
+        // await testSpecificUrls();
         
         // Quick searches with different topics
-        await quickSearchWithDecoding('cryptocurrency news', 4);
-        await quickSearchWithDecoding('climate change', 3);
+        // await quickSearchWithDecoding('cryptocurrency news', 4);
+        await quickSearchWithDecoding('Soham Parekh', 10);
         
         console.log('\n🎉 All tests completed!');
         console.log('\n💡 Key Features Demonstrated:');

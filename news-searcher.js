@@ -227,14 +227,16 @@ class IntegratedGoogleNewsSearcher {
             } else {
                 this.decodingStats.failed++;
                 console.log(`   ❌ Failed: ${result.message}`);
-                // Fallback to original domain extraction method
+                // Fallback to improved domain extraction method
                 article.domain = this.extractRealDomain(article);
+                console.log(`   🔄 Fallback domain: ${article.domain}`);
                 return false;
             }
         } catch (error) {
             this.decodingStats.failed++;
             console.log(`   ❌ Error: ${error.message}`);
             article.domain = this.extractRealDomain(article);
+            console.log(`   🔄 Fallback domain: ${article.domain}`);
             return false;
         }
     }
@@ -248,7 +250,68 @@ class IntegratedGoogleNewsSearcher {
         }
     }
 
+    // Extract domain from Google News URL patterns
+    extractDomainFromGoogleNewsUrl(googleNewsUrl) {
+        try {
+            // Pattern 1: Look for domain hints in the URL path
+            const domainPatterns = [
+                // Common news domains that appear in Google News URLs
+                /(?:cnn|bbc|reuters|bloomberg|wsj|nytimes|washingtonpost|theguardian|forbes|cnbc|yahoo|apnews|npr|techcrunch|businessinsider|cointelegraph|coindesk|investing|barrons|tradingview|cointribune|cryptoslate|hindustantimes|timesofindia|ndtv|mathrubhumi|indiatoday|businesstoday|goodreturns|people|futurism|investors|fool|barchart|ccn|dlnews|ainvest|thecryptobasic)/i,
+                // Look for domain-like patterns in the URL
+                /([a-zA-Z0-9-]+)\.(com|org|net|co\.uk|in|ai|io|tv|news)/i
+            ];
+            
+            for (const pattern of domainPatterns) {
+                const match = googleNewsUrl.match(pattern);
+                if (match) {
+                    const domain = match[0].toLowerCase();
+                    // Map common abbreviations to full domains
+                    const domainMap = {
+                        'cnn': 'cnn.com',
+                        'bbc': 'bbc.com',
+                        'wsj': 'wsj.com',
+                        'nytimes': 'nytimes.com',
+                        'reuters': 'reuters.com',
+                        'bloomberg': 'bloomberg.com',
+                        'forbes': 'forbes.com',
+                        'cnbc': 'cnbc.com',
+                        'yahoo': 'yahoo.com',
+                        'npr': 'npr.org',
+                        'techcrunch': 'techcrunch.com',
+                        'businessinsider': 'businessinsider.com',
+                        'cointelegraph': 'cointelegraph.com',
+                        'coindesk': 'coindesk.com',
+                        'investing': 'investing.com',
+                        'barrons': 'barrons.com',
+                        'tradingview': 'tradingview.com',
+                        'cointribune': 'cointribune.com',
+                        'cryptoslate': 'cryptoslate.com',
+                        'people': 'people.com',
+                        'futurism': 'futurism.com'
+                    };
+                    return domainMap[domain] || domain;
+                }
+            }
+            
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
     extractRealDomain(article) {
+        // Try multiple strategies to extract domain
+        let domain = null;
+        
+        // Strategy 1: Extract from Google News URL pattern
+        if (article.link) {
+            domain = this.extractDomainFromGoogleNewsUrl(article.link);
+            if (domain) {
+                return domain;
+            }
+        }
+        
+        // Strategy 2: Map from source name
         if (article.source && article.source !== 'Unknown') {
             const sourceName = article.source.toLowerCase();
             
@@ -267,6 +330,7 @@ class IntegratedGoogleNewsSearcher {
                 'forbes': 'forbes.com',
                 'cnbc': 'cnbc.com',
                 'yahoo': 'yahoo.com',
+                'yahoo finance': 'finance.yahoo.com',
                 'associated press': 'apnews.com',
                 'ap': 'apnews.com',
                 'npr': 'npr.org',
@@ -282,22 +346,60 @@ class IntegratedGoogleNewsSearcher {
                 'goodreturns': 'goodreturns.in',
                 'mathrubhumi': 'mathrubhumi.com',
                 'business today': 'businesstoday.in',
-                'india today': 'indiatoday.in'
+                'india today': 'indiatoday.in',
+                'investing.com': 'investing.com',
+                'investing': 'investing.com',
+                'barrons': 'barrons.com',
+                'tradingview': 'tradingview.com',
+                'cointribune': 'cointribune.com',
+                'cryptoslate': 'cryptoslate.com',
+                'bitcoin.com': 'news.bitcoin.com',
+                'bitcoin.com news': 'news.bitcoin.com',
+                'ccn': 'ccn.com',
+                'thecryptobasic': 'thecryptobasic.com',
+                'dlnews': 'dlnews.com',
+                'ainvest': 'ainvest.com',
+                'futurism': 'futurism.com',
+                'investor\'s business daily': 'investors.com',
+                'investors': 'investors.com',
+                'the motley fool': 'fool.com',
+                'motley fool': 'fool.com',
+                'barchart': 'barchart.com',
+                'investopedia': 'investopedia.com',
+                'aboutamazon': 'aboutamazon.com',
+                'amazon': 'aboutamazon.com'
             };
             
-            for (const [name, domain] of Object.entries(sourceMapping)) {
+            for (const [name, domainValue] of Object.entries(sourceMapping)) {
                 if (sourceName.includes(name)) {
-                    return domain;
+                    return domainValue;
                 }
             }
             
+            // Strategy 3: Extract domain-like patterns from source name
             const domainMatch = sourceName.match(/([a-zA-Z0-9-]+\.[a-zA-Z]{2,})/);
             if (domainMatch) {
                 return domainMatch[1];
             }
+            
+            // Strategy 4: Try to create a reasonable domain from source name
+            const cleanSource = sourceName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+            if (cleanSource && cleanSource.length > 2) {
+                const words = cleanSource.split(/\s+/);
+                if (words.length === 1) {
+                    return `${words[0].toLowerCase()}.com`;
+                } else if (words.length === 2) {
+                    return `${words[0].toLowerCase()}${words[1].toLowerCase()}.com`;
+                } else {
+                    return `${words[0].toLowerCase()}.com`;
+                }
+            }
         }
 
-        return `unknown-${Math.abs(this.hashCode(article.title + article.source))}`;
+        // Strategy 5: Last resort - create a meaningful identifier
+        const titleWords = article.title.toLowerCase().replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/);
+        const meaningfulWord = titleWords.find(word => word.length > 4) || titleWords[0] || 'news';
+        return `${meaningfulWord}.unknown`;
     }
 
     hashCode(str) {
@@ -362,19 +464,24 @@ class IntegratedGoogleNewsSearcher {
 
             console.log(`📰 Found ${allArticles.length} raw articles`);
 
-            // Decode URLs if requested (limited to prevent overwhelming the API)
+            // Decode URLs if requested (with smart limiting)
             if (decodeUrls && allArticles.length > 0) {
                 console.log(`\n🔓 Starting URL decoding process...`);
                 
-                // Limit decoding to prevent rate limiting
-                const articlesToDecode = allArticles.slice(0, Math.min(maxResults + 5, 20));
+                // Smart limiting: only decode what we need + small buffer for deduplication
+                const buffer = Math.min(maxResults, 10); // Add 5-10 extra for deduplication
+                const maxDecodeAttempts = Math.min(maxResults + buffer, allArticles.length);
+                const articlesToDecode = allArticles.slice(0, maxDecodeAttempts);
+                
+                console.log(`📊 Attempting to decode ${articlesToDecode.length} URLs...`);
                 
                 for (let i = 0; i < articlesToDecode.length; i++) {
                     await this.decodeArticleUrl(articlesToDecode[i], i);
                     
-                    // Add small delay to be respectful to Google's servers
+                    // Adaptive delay: shorter delays for fewer requests, longer for more
                     if (i < articlesToDecode.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 500));
+                        const delay = articlesToDecode.length > 20 ? 800 : 400;
+                        await new Promise(resolve => setTimeout(resolve, delay));
                     }
                 }
                 
@@ -385,11 +492,23 @@ class IntegratedGoogleNewsSearcher {
                         allArticles[i].domain = articlesToDecode[i].domain;
                     }
                 }
+                
+                // Apply improved domain extraction to remaining articles
+                for (let i = articlesToDecode.length; i < allArticles.length; i++) {
+                    allArticles[i].domain = this.extractRealDomain(allArticles[i]);
+                }
             } else {
-                // Fallback domain extraction for all articles
-                allArticles.forEach(article => {
+                // Apply improved domain extraction to all articles
+                console.log(`\n🔍 Extracting domains without URL decoding...`);
+                allArticles.forEach((article, index) => {
                     article.domain = this.extractRealDomain(article);
+                    if (index < 5) {
+                        console.log(`   📍 ${article.title.substring(0, 40)}... → ${article.domain}`);
+                    }
                 });
+                if (allArticles.length > 5) {
+                    console.log(`   📍 ... and ${allArticles.length - 5} more articles`);
+                }
             }
 
             console.log(`\n🔍 Processing and removing duplicates...`);
