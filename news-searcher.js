@@ -211,34 +211,68 @@ class IntegratedGoogleNewsSearcher {
     }
 
     async decodeArticleUrl(article, index) {
+        const startTime = Date.now();
         console.log(`🔓 Decoding URL ${index + 1}: ${article.title.substring(0, 50)}...`);
         
         this.decodingStats.total++;
         
         try {
             const result = await this.decoder.decodeGoogleNewsUrl(article.link);
+            const duration = Date.now() - startTime;
             
             if (result.status) {
                 this.decodingStats.successful++;
                 article.realUrl = result.decoded_url;
                 article.domain = this.extractDomainFromUrl(result.decoded_url);
-                console.log(`   ✅ Success: ${article.domain}`);
+                console.log(`   ✅ Success: ${article.domain} (${duration}ms)`);
                 return true;
             } else {
                 this.decodingStats.failed++;
-                console.log(`   ❌ Failed: ${result.message}`);
+                console.log(`   ❌ Failed: ${result.message} (${duration}ms)`);
                 // Fallback to improved domain extraction method
                 article.domain = this.extractRealDomain(article);
                 console.log(`   🔄 Fallback domain: ${article.domain}`);
                 return false;
             }
         } catch (error) {
+            const duration = Date.now() - startTime;
             this.decodingStats.failed++;
-            console.log(`   ❌ Error: ${error.message}`);
+            console.log(`   ❌ Error: ${error.message} (${duration}ms)`);
             article.domain = this.extractRealDomain(article);
             console.log(`   🔄 Fallback domain: ${article.domain}`);
             return false;
         }
+    }
+
+    // Process articles in parallel batches for faster decoding
+    async decodeArticlesInBatches(articles, batchSize = 5) {
+        const totalStart = Date.now();
+        console.log(`🚀 Starting parallel decoding of ${articles.length} URLs in batches of ${batchSize}...`);
+        
+        for (let i = 0; i < articles.length; i += batchSize) {
+            const batch = articles.slice(i, i + batchSize);
+            const batchStart = Date.now();
+            
+            console.log(`\n📦 Processing batch ${Math.floor(i / batchSize) + 1}: URLs ${i + 1}-${Math.min(i + batchSize, articles.length)}`);
+            
+            // Decode all URLs in this batch in parallel
+            const promises = batch.map((article, batchIndex) => 
+                this.decodeArticleUrl(article, i + batchIndex)
+            );
+            
+            await Promise.all(promises);
+            
+            const batchDuration = Date.now() - batchStart;
+            console.log(`✅ Batch completed in ${batchDuration}ms`);
+            
+            // Small delay between batches to be respectful
+            if (i + batchSize < articles.length) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+        
+        const totalDuration = Date.now() - totalStart;
+        console.log(`\n🎯 All ${articles.length} URLs processed in ${totalDuration}ms (avg: ${Math.round(totalDuration / articles.length)}ms per URL)`);
     }
 
     extractDomainFromUrl(url) {
@@ -475,15 +509,9 @@ class IntegratedGoogleNewsSearcher {
                 
                 console.log(`📊 Attempting to decode ${articlesToDecode.length} URLs...`);
                 
-                for (let i = 0; i < articlesToDecode.length; i++) {
-                    await this.decodeArticleUrl(articlesToDecode[i], i);
-                    
-                    // Adaptive delay: shorter delays for fewer requests, longer for more
-                    if (i < articlesToDecode.length - 1) {
-                        const delay = articlesToDecode.length > 20 ? 800 : 400;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    }
-                }
+                // Use parallel batch processing for much faster decoding
+                const batchSize = Math.min(articlesToDecode.length <= 10 ? 3 : 5, articlesToDecode.length);
+                await this.decodeArticlesInBatches(articlesToDecode, batchSize);
                 
                 // Copy decoded info back to original articles
                 for (let i = 0; i < articlesToDecode.length; i++) {
