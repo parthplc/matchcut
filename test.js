@@ -117,15 +117,20 @@ async function testSpecificUrls() {
     }
 }
 
-async function quickSearchWithDecoding(topic, maxResults = 5) {
-    console.log(`\n${'='.repeat(70)}`);
+async function quickSearchWithDecoding(topic, maxResults = 5, captureScreenshots = false, screenshotOptions = {}) {
+    console.log(`
+${'='.repeat(70)}`);
     console.log(`🔍 Quick search with decoding: "${topic}"`);
+    if (captureScreenshots) {
+        console.log('📸 Screenshots: ENABLED');
+    }
     console.log('='.repeat(70));
     
     const searcher = new IntegratedGoogleNewsSearcher();
-    const results = await searcher.searchNews(topic, 'en', 'US', maxResults, true);
+    const results = await searcher.searchNews(topic, 'en', 'US', maxResults, true, captureScreenshots, screenshotOptions);
     
     if (results.success) {
+
         console.log(`\n📊 Results: ${results.totalResults} articles`);
         console.log(`🔓 Decoding: ${results.decodingStats.successful}/${results.decodingStats.total} successful\n`);
         
@@ -138,6 +143,14 @@ async function quickSearchWithDecoding(topic, maxResults = 5) {
                 console.log(`   ✅ Real: ${article.realUrl}`);
             } else {
                 console.log(`   🔗 Google: ${article.link}`);
+            }
+            
+            if (article.screenshot) {
+                if (article.screenshot.success) {
+                    console.log(`   📸 Screenshot: ${article.screenshot.fileName}`);
+                } else {
+                    console.log(`   📸 Screenshot: Failed - ${article.screenshot.error}`);
+                }
             }
             console.log('');
         });
@@ -157,7 +170,7 @@ async function main() {
         
         // Quick searches with different topics
         // await quickSearchWithDecoding('cryptocurrency news', 4);
-        await quickSearchWithDecoding('Soham Parekh', 10);
+        await quickSearchWithDecoding('Soham Parekh', 20, true, { blockAds: false, blockCookieBanners: false, blockPopups: true });
         
         console.log('\n🎉 All tests completed!');
         console.log('\n💡 Key Features Demonstrated:');

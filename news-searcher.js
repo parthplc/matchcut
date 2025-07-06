@@ -3,6 +3,7 @@ const axios = require('axios');
 const xml2js = require('xml2js');
 const cheerio = require('cheerio');
 const { URL } = require('url');
+const ScreenshotService = require('./screenshot-service');
 
 class GoogleNewsDecoder {
     constructor(proxy) {
@@ -153,6 +154,7 @@ class IntegratedGoogleNewsSearcher {
         this.baseUrl = 'https://news.google.com/rss';
         this.parser = new xml2js.Parser({ explicitArray: false });
         this.decoder = new GoogleNewsDecoder(proxy);
+        this.screenshotService = new ScreenshotService();
         
         // Stats for tracking decoder performance
         this.decodingStats = {
@@ -162,7 +164,7 @@ class IntegratedGoogleNewsSearcher {
         };
     }
 
-    async searchNews(keyword, language = 'en', country = 'US', maxResults = 50, decodeUrls = true) {
+    async searchNews(keyword, language = 'en', country = 'US', maxResults = 50, decodeUrls = true, captureScreenshots = false, screenshotOptions = {}) {
         try {
             const searchUrl = this.buildSearchUrl(keyword, language, country);
             console.log(`🔍 Searching for: "${keyword}"`);
@@ -177,6 +179,45 @@ class IntegratedGoogleNewsSearcher {
 
             const parsed = await this.parser.parseStringPromise(response.data);
             const articles = await this.extractArticles(parsed, maxResults, decodeUrls);
+
+            // Capture screenshots if requested
+            if (captureScreenshots && articles.length > 0) {
+                console.log(`\n📸 Starting screenshot capture...`);
+                const defaultScreenshotOptions = {
+                    batchSize: 2,
+                    batchDelay: 2000,
+                    delay: 3,
+                    timeout: 30,
+                    ...screenshotOptions
+                };
+                
+                const screenshotResult = await this.screenshotService.batchCapture(
+                    articles.map(article => ({
+                        ...article,
+                        decodedUrl: article.realUrl || article.link,
+                        id: this.generateArticleId(article)
+                    })),
+                    {
+                        ...defaultScreenshotOptions,
+                        targetCount: maxResults
+                    }
+                );
+                
+                // Store screenshot paths in article objects
+                screenshotResult.results.forEach((result, index) => {
+                    if (articles[index]) {
+                        articles[index].screenshot = {
+                            success: result.success,
+                            filePath: result.filePath || null,
+                            fileName: result.fileName || null,
+                            error: result.error || null,
+                            timestamp: result.timestamp
+                        };
+                    }
+                });
+                
+                console.log(`📊 Screenshot Summary: ${screenshotResult.summary.successful}/${screenshotResult.summary.total} captured (${screenshotResult.summary.successRate})`);
+            }
 
             // Print decoding stats
             if (decodeUrls && this.decodingStats.total > 0) {
@@ -444,6 +485,12 @@ class IntegratedGoogleNewsSearcher {
             hash = hash & hash;
         }
         return hash;
+    }
+
+    generateArticleId(article) {
+        const cleanTitle = article.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+        const hash = Math.abs(this.hashCode(article.title + article.link)).toString(16).substring(0, 8);
+        return `${cleanTitle}_${hash}`;
     }
 
     removeDuplicateUrls(articles) {
