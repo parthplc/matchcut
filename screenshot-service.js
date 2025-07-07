@@ -20,8 +20,8 @@ class ScreenshotService {
         console.log(`   Secret Key: ${process.env.SECRET_KEY ? 'Set' : 'Missing'}`);
     }
 
-    generateFileName(articleId, timestamp = Date.now()) {
-        return `${timestamp}_${articleId}.png`;
+    generateFileName(articleId, timestamp = Date.now(), format = 'jpeg') {
+        return `${timestamp}_${articleId}.${format}`;
     }
 
     async delay(ms) {
@@ -29,11 +29,8 @@ class ScreenshotService {
     }
 
     async captureScreenshot(url, articleId, options = {}) {
-        const fileName = this.generateFileName(articleId);
-        const filePath = path.join(this.screenshotDir, fileName);
-        
         const defaultOptions = {
-            format: 'png',
+            format: 'jpeg',
             viewport_width: 1920,
             viewport_height: 1080,
             device_scale_factor: 1,
@@ -46,6 +43,9 @@ class ScreenshotService {
             blockPopups: true,
             ...options
         };
+
+        const fileName = this.generateFileName(articleId, Date.now(), defaultOptions.format);
+        const filePath = path.join(this.screenshotDir, fileName);
 
         let lastError;
         
