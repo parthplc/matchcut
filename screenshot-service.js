@@ -1,5 +1,4 @@
 require('dotenv').config();
-const screenshotone = require('screenshotone-api-sdk');
 const fs = require('fs-extra');
 const path = require('path');
 const axios = require('axios');
@@ -12,12 +11,12 @@ class ScreenshotService {
         this.maxRetries = 1;
         this.retryDelay = 500;
         
-        // Initialize ScreenshotOne client
-        this.client = new screenshotone.Client(process.env.ACCESS_KEY, process.env.SECRET_KEY);
+        // Initialize ScreenshotAPI client
+        this.apiKey = process.env.API_KEY_SCREENSHOTAPI;
+        this.baseUrl = 'https://shot.screenshotapi.net/v3/screenshot';
         
-        console.log('📸 ScreenshotOne API initialized');
-        console.log(`   Access Key: ${process.env.ACCESS_KEY ? 'Set' : 'Missing'}`);
-        console.log(`   Secret Key: ${process.env.SECRET_KEY ? 'Set' : 'Missing'}`);
+        console.log('📸 ScreenshotAPI.net initialized');
+        console.log(`   API Key: ${this.apiKey ? 'Set' : 'Missing'}`);
     }
 
     generateFileName(articleId, timestamp = Date.now(), format = 'jpeg') {
@@ -53,39 +52,57 @@ class ScreenshotService {
             try {
                 console.log(`Capturing screenshot for ${url} (attempt ${attempt}/${this.maxRetries})`);
                 
-                // Build ScreenshotOne request options using TakeOptions
-                let opts = screenshotone.TakeOptions
-                    .url(url)
-                    .viewportWidth(defaultOptions.viewport_width)
-                    .viewportHeight(defaultOptions.viewport_height)
-                    .deviceScaleFactor(defaultOptions.device_scale_factor)
-                    .format(defaultOptions.format)
-                    .delay(defaultOptions.delay)
-                    .timeout(defaultOptions.timeout)
-                    .fullPage(defaultOptions.full_page);
+                // Build ScreenshotAPI request parameters
+                const params = new URLSearchParams({
+                    token: this.apiKey,
+                    url: url,
+                    output: 'file',
+                    file_type: defaultOptions.format,
+                    viewport_width: defaultOptions.viewport_width,
+                    viewport_height: defaultOptions.viewport_height,
+                    full_page: defaultOptions.full_page,
+                    delay: defaultOptions.delay * 1000, // Convert to milliseconds
+                    timeout: defaultOptions.timeout * 1000, // Convert to milliseconds
+                    device_scale_factor: defaultOptions.device_scale_factor
+                });
 
-                // Add blocking options - allow cookies and ads, but block popups
-                opts = opts
-                    .blockAds(defaultOptions.blockAds)
-                    .blockCookieBanners(defaultOptions.blockCookieBanners)
-                    .blockTrackers(false)
-                    .hideSelectors(this.getSelectorsToHide(defaultOptions).join(','))
-                    .scripts([this.getCleaningScript(defaultOptions)])
-                    .styles(this.getCleaningCSS(defaultOptions));
+                // Add blocking options if enabled
+                if (defaultOptions.blockAds) {
+                    params.append('block_ads', 'true');
+                }
+                if (defaultOptions.blockCookieBanners) {
+                    params.append('block_cookie_banners', 'true');
+                }
+                if (defaultOptions.blockPopups) {
+                    params.append('block_popups', 'true');
+                }
 
-                // Generate the screenshot URL
-                const screenshotUrl = await this.client.generateTakeURL(opts);
-                console.log(`📸 Using ScreenshotOne API: ${screenshotUrl.substring(0, 100)}...`);
+                // Build the full API URL
+                const screenshotUrl = `${this.baseUrl}?${params.toString()}`;
+                console.log(`📸 Using ScreenshotAPI: ${screenshotUrl.substring(0, 100)}...`);
 
-                // Make the API request directly for the image
+                // Make the API request to get the JSON response
                 const response = await axios.get(screenshotUrl, {
-                    responseType: 'stream',
                     timeout: (defaultOptions.timeout + 10) * 1000 // Add buffer to timeout
                 });
 
-                // Save the image directly
+                // Parse the JSON response to get the screenshot URL
+                const screenshotData = response.data;
+                if (!screenshotData || !screenshotData.screenshot) {
+                    throw new Error('Invalid API response: missing screenshot URL');
+                }
+
+                console.log(`🔗 Screenshot URL: ${screenshotData.screenshot}`);
+
+                // Download the actual image from the screenshot URL
+                const imageResponse = await axios.get(screenshotData.screenshot, {
+                    responseType: 'stream',
+                    timeout: 30000 // 30 second timeout for image download
+                });
+
+                // Save the image to local file
                 const writer = fs.createWriteStream(filePath);
-                response.data.pipe(writer);
+                imageResponse.data.pipe(writer);
 
                 await new Promise((resolve, reject) => {
                     writer.on('finish', resolve);
@@ -100,7 +117,7 @@ class ScreenshotService {
                     url: url,
                     articleId: articleId,
                     timestamp: Date.now(),
-                    api: 'ScreenshotOne',
+                    api: 'ScreenshotAPI',
                     options: defaultOptions
                 };
                 
@@ -122,7 +139,7 @@ class ScreenshotService {
             url: url,
             articleId: articleId,
             timestamp: Date.now(),
-            api: 'ScreenshotOne'
+            api: 'ScreenshotAPI'
         };
     }
 
@@ -133,7 +150,7 @@ class ScreenshotService {
         const targetCount = options.targetCount || articles.length;
 
         console.log(`Starting batch capture of ${articles.length} articles with batch size ${batchSize}`);
-        console.log(`📸 Using ScreenshotOne API with popup blocking (allowing cookies and ads)`);
+        console.log(`📸 Using ScreenshotAPI with popup blocking (allowing cookies and ads)`);
         console.log(`🎯 Target: ${targetCount} successful screenshots`);
 
         let articleIndex = 0;
@@ -192,7 +209,7 @@ class ScreenshotService {
                 successful: successful,
                 failed: failed,
                 successRate: ((successful / results.length) * 100).toFixed(2) + '%',
-                api: 'ScreenshotOne',
+                api: 'ScreenshotAPI',
                 targetReached: successful >= targetCount
             }
         };
@@ -368,29 +385,32 @@ class ScreenshotService {
     // Test API connectivity
     async testConnection() {
         try {
-            const testOptions = screenshotone.TakeOptions
-                .url('https://example.com')
-                .viewportWidth(800)
-                .viewportHeight(600)
-                .format('png');
+            const params = new URLSearchParams({
+                token: this.apiKey,
+                url: 'https://example.com',
+                output: 'file',
+                file_type: 'png',
+                viewport_width: 800,
+                viewport_height: 600
+            });
 
-            const testUrl = await this.client.generateTakeURL(testOptions);
-            console.log('🧪 Testing ScreenshotOne API connection...');
+            const testUrl = `${this.baseUrl}?${params.toString()}`;
+            console.log('🧪 Testing ScreenshotAPI connection...');
             
             const response = await axios.get(testUrl, { 
-                timeout: 10000,
-                responseType: 'stream'
+                timeout: 10000
             });
             
-            if (response.status === 200) {
-                console.log('✅ ScreenshotOne API connection successful');
+            if (response.status === 200 && response.data && response.data.screenshot) {
+                console.log('✅ ScreenshotAPI connection successful');
+                console.log(`📸 Test screenshot URL: ${response.data.screenshot}`);
                 return true;
             } else {
-                console.log('❌ ScreenshotOne API test failed with status:', response.status);
+                console.log('❌ ScreenshotAPI test failed with status:', response.status);
                 return false;
             }
         } catch (error) {
-            console.log('❌ ScreenshotOne API connection failed:', error.message);
+            console.log('❌ ScreenshotAPI connection failed:', error.message);
             return false;
         }
     }

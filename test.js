@@ -170,7 +170,7 @@ async function main() {
         
         // Quick searches with different topics
         // await quickSearchWithDecoding('cryptocurrency news', 4);
-        await quickSearchWithDecoding('Soham Parekh', 20, true, { blockAds: false, blockCookieBanners: false, blockPopups: true });
+        await quickSearchWithDecoding('Soham Parekh', 5, true, { blockAds: false, blockCookieBanners: false, blockPopups: true });
         
         console.log('\n🎉 All tests completed!');
         console.log('\n💡 Key Features Demonstrated:');

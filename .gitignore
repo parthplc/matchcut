@@ -174,3 +174,8 @@ api-keys.txt
 # Test output
 test-results/
 test-output/
+GEMINI.md
+Claude.md
+
+#images
+*.jpeg
