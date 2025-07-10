@@ -5,11 +5,14 @@ const axios = require('axios');
 
 class ScreenshotService {
     constructor() {
-        this.screenshotDir = path.join(__dirname, 'screenshots');
+        this.screenshotDir = path.join(__dirname, 'screenshots', 'raw');
         this.tempDir = path.join(__dirname, 'screenshots', 'temp');
         this.processedDir = path.join(__dirname, 'screenshots', 'processed');
         this.maxRetries = 1;
         this.retryDelay = 500;
+        
+        // Ensure the raw directory exists
+        fs.ensureDirSync(this.screenshotDir);
         
         // Initialize ScreenshotAPI client
         this.apiKey = process.env.API_KEY_SCREENSHOTAPI;
@@ -374,7 +377,7 @@ class ScreenshotService {
                 }
             }
 
-            console.log(`Cleaned up ${deletedCount} old screenshot files`);
+            console.log(`Cleaned up ${deletedCount} old screenshot files from raw directory`);
             return deletedCount;
         } catch (error) {
             console.error(`Error cleaning up screenshots: ${error.message}`);

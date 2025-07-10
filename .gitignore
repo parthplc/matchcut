@@ -170,7 +170,8 @@ api-keys.txt
 *.key
 *.pem
 *.crt
-
+*.json
+.json
 # Test output
 test-results/
 test-output/

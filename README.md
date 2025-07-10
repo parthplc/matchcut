@@ -1,6 +1,6 @@
 # MatchCut
 
-An advanced Google News searcher with integrated URL decoding, high-performance parallel processing, and automated screenshot capture. MatchCut fetches news articles from Google News RSS feeds, decodes obfuscated URLs to reveal real source URLs, and captures screenshots of article pages for visual content analysis.
+An advanced Google News searcher with integrated URL decoding, high-performance parallel processing, automated screenshot capture, and OCR text extraction. MatchCut fetches news articles from Google News RSS feeds, decodes obfuscated URLs to reveal real source URLs, captures screenshots of article pages for visual content analysis, and extracts text from those screenshots.
 
 ## Current Status
 
@@ -9,87 +9,116 @@ This application is **production-ready** with advanced features and optimized pe
 ## Features
 
 ### ✅ Core Features
-- **Google News RSS Integration**: Fetches news articles from Google News RSS feeds
-- **Keyword Search**: Search for news articles by keyword with language and country filters
+- **Google News RSS Integration**: Fetches news articles from Google News RSS feeds.
+- **Keyword Search**: Search for news articles by keyword with language and country filters.
 - **Article Processing**: Extracts and processes article data including:
-  - Title cleaning and normalization
-  - Publication date parsing
-  - Source name extraction
-  - Advanced domain detection and mapping
+  - Title cleaning and normalization.
+  - Publication date parsing.
+  - Source name extraction.
+  - Advanced domain detection and mapping.
 
 ### 🚀 Advanced URL Decoding
-- **Google News URL Decoder**: Built-in decoder that converts obfuscated Google News URLs to real source URLs
-- **High Success Rate**: Achieves 100% success rate for URL decoding when Google's API is responsive
+- **Google News URL Decoder**: Built-in decoder that converts obfuscated Google News URLs to real source URLs.
+- **High Success Rate**: Achieves 100% success rate for URL decoding when Google's API is responsive.
 - **Intelligent Fallbacks**: Multiple domain extraction strategies when decoding fails:
-  - URL pattern analysis from Google News links
-  - Expanded source name mapping (50+ news sources)
-  - Smart domain generation from source names
-  - Meaningful fallback identifiers instead of "undefined"
+  - URL pattern analysis from Google News links.
+  - Expanded source name mapping (50+ news sources).
+  - Smart domain generation from source names.
+  - Meaningful fallback identifiers instead of "undefined".
 
 ### ⚡ Performance Optimizations
-- **Parallel URL Decoding**: Processes multiple URLs simultaneously using batch processing
-- **74% Faster**: Reduced processing time from ~36s to ~9s for typical requests
-- **Smart Rate Limiting**: Controlled concurrency with adaptive delays to respect server limits
-- **Efficient Resource Usage**: Only decodes required articles + small buffer for deduplication
+- **Parallel URL Decoding**: Processes multiple URLs simultaneously using batch processing.
+- **74% Faster**: Reduced processing time from ~36s to ~9s for typical requests.
+- **Smart Rate Limiting**: Controlled concurrency with adaptive delays to respect server limits.
+- **Efficient Resource Usage**: Only decodes required articles + small buffer for deduplication.
 
 ### 🔍 Smart Article Processing
 - **Advanced Deduplication**: Removes duplicate articles based on:
-  - Exact URL duplicates
-  - Similar title matching
-  - Content similarity detection
+  - Exact URL duplicates.
+  - Similar title matching.
+  - Content similarity detection.
 - **Domain Intelligence**: Accurate domain extraction using:
-  - Source name mapping for 50+ major news sources
-  - Google News URL pattern analysis
-  - Intelligent fallback domain generation
-- **Flexible Output**: Detailed article information with real URLs and source attribution
+  - Source name mapping for 50+ major news sources.
+  - Google News URL pattern analysis.
+  - Intelligent fallback domain generation.
+- **Flexible Output**: Detailed article information with real URLs and source attribution.
 
 ### 📸 Advanced Screenshot Capture
-- **Automated Screenshot Generation**: Captures screenshots of article pages automatically
-- **ScreenshotAPI.net Integration**: Uses high-performance screenshot API for reliable captures
+- **Automated Screenshot Generation**: Captures screenshots of article pages automatically.
+- **ScreenshotAPI.net Integration**: Uses high-performance screenshot API for reliable captures.
 - **Intelligent Content Blocking**: Configurable blocking of:
-  - Advertisements and promotional content
-  - Cookie banners and GDPR notices
-  - Popup dialogs and overlays
-- **Flexible Format Support**: JPEG, PNG, WebP with customizable quality
-- **Viewport Control**: Configurable screen dimensions and device scaling
-- **Batch Processing**: Efficient parallel screenshot capture with rate limiting
+  - Advertisements and promotional content.
+  - Cookie banners and GDPR notices.
+  - Popup dialogs and overlays.
+- **Flexible Format Support**: JPEG, PNG, WebP with customizable quality.
+- **Viewport Control**: Configurable screen dimensions and device scaling.
+- **Batch Processing**: Efficient parallel screenshot capture with rate limiting.
 - **Local Storage**: Automatic file management and cleanup of captured screenshots
+- **Organized Storage**: Screenshots saved to `screenshots/raw/` directory.
+
+### 🔍 OCR Text Extraction
+- **Google Cloud Vision API Integration**: Extracts text from captured screenshots.
+- **Automatic Text Detection**: Converts images to structured text data.
+- **Confidence Scoring**: Provides accuracy metrics for extracted text.
+- **Batch Processing**: Processes multiple screenshots simultaneously.
+- **Structured Output**: Saves extracted text as JSON with bounding boxes and metadata.
+- **Directory Management**: Organized storage for processed images and text data
+- **Pretty-Printed JSON**: OCR results saved as formatted JSON files for easy reading.
 
 ### 🔧 Technical Implementation
-- **Node.js** with CommonJS modules
-- **axios** for HTTP requests and URL decoding
-- **xml2js** for RSS feed parsing
-- **cheerio** for HTML parsing during URL decoding
-- **fs-extra** for advanced file system operations
-- **ScreenshotAPI.net** for reliable screenshot capture
-- **Parallel Processing**: Promise.all() for concurrent URL decoding and screenshot capture
-- **Batch Processing**: Controlled concurrency with configurable batch sizes
-- **Comprehensive Error Handling**: Graceful fallbacks and detailed logging
-- **Configurable Parameters**: Language, country, max results, decoding options, screenshot settings
+- **Node.js** with CommonJS modules.
+- **axios** for HTTP requests and URL decoding.
+- **xml2js** for RSS feed parsing.
+- **cheerio** for HTML parsing during URL decoding.
+- **fs-extra** for advanced file system operations.
+- **ScreenshotAPI.net** for reliable screenshot capture.
+- **Google Cloud Vision API** for OCR text extraction.
+- **Parallel Processing**: `Promise.all()` for concurrent URL decoding and screenshot capture.
+- **Batch Processing**: Controlled concurrency with configurable batch sizes.
+- **Comprehensive Error Handling**: Graceful fallbacks and detailed logging.
+- **Configurable Parameters**: Language, country, max results, decoding options, screenshot settings.
 
 ## Project Structure
 
 ```
 matchcut/
-├── package.json          # Project dependencies and configuration
-├── news-searcher.js      # Main IntegratedGoogleNewsSearcher class with URL decoder
-├── screenshot-service.js # ScreenshotAPI.net integration for automated screenshots
-├── test.js              # Comprehensive test suite with usage examples
-├── decoder.js           # Standalone URL decoder (legacy)
-├── screenshots/         # Directory for captured screenshots
-├── .env                 # Environment variables (API keys)
-├── node_modules/        # Dependencies
-└── README.md           # This file
+├── package.json                        # Project dependencies and configuration
+├── news-searcher.js                    # Main IntegratedGoogleNewsSearcher class with URL decoder
+├── screenshot-service.js               # ScreenshotAPI.net integration for automated screenshots
+├── ocr-service.js                      # Google Cloud Vision API integration for OCR
+├── test.js                             # Comprehensive test suite for news-searcher and screenshot-service
+├── test-ocr.js                         # Test suite for the OCR service
+├── decoder.js                          # Standalone URL decoder (legacy, for reference)
+├── main.py                             # Placeholder for future Python-based functionality
+├── pyproject.toml                      # Python project configuration (for future use)
+├── GEMINI.md                           # Additional documentation (Gemini-related)
+├── matchcut-ocr-app-serviceaccount.json # Google Cloud service account credentials
+├── screenshots/                        # Directory for captured screenshots
+│   ├── raw/                            # Raw screenshot files (JPEG/PNG)
+│   ├── processed/                      # Processed screenshots (e.g., after OCR)
+│   ├── logs/                           # OCR output in pretty-printed JSON format
+│   └── temp/                           # Temporary files during processing
+├── oldscreenshots/                     # Archived screenshots from previous runs
+├── .env                                # Environment variables (API keys)
+├── node_modules/                       # Dependencies
+└── README.md                           # This file
 ```
+
+**Note on `decoder.js`**: This file represents the original, standalone URL decoder. The logic has since been integrated into `news-searcher.js` for better performance and a more streamlined workflow. It is kept for reference and for testing the decoding logic in isolation.
+
+## Python Environment
+
+This project includes a basic setup for future Python integration, indicated by the presence of `main.py`, `pyproject.toml`, and a `.venv` directory. This is intended for future development of Python-based services, such as data analysis or machine learning tasks on the collected news data.
 
 ## Dependencies
 
-- **axios**: ^1.6.0 - HTTP client for API requests and URL decoding
-- **xml2js**: ^0.6.2 - XML/RSS parsing
-- **cheerio**: ^1.0.0 - HTML parsing for URL decoding
-- **fs-extra**: ^11.3.0 - Enhanced file system operations
-- **dotenv**: ^17.0.1 - Environment variable management
-- **sharp**: ^0.34.2 - Image processing and optimization
+- **@google-cloud/vision**: Google Cloud Vision API client for OCR.
+- **axios**: HTTP client for API requests and URL decoding.
+- **xml2js**: XML/RSS parsing.
+- **cheerio**: HTML parsing for URL decoding.
+- **fs-extra**: Enhanced file system operations.
+- **dotenv**: Environment variable management.
+- **sharp**: Image processing and optimization.
 
 ## Usage Examples
 
@@ -166,138 +195,61 @@ if (results.success) {
 }
 ```
 
-### Using the Standalone URL Decoder
+### Using the OCR Service
 
 ```javascript
-const { GoogleNewsDecoder } = require('./news-searcher');
+const OCRService = require('./ocr-service');
+const path = require('path');
 
-const decoder = new GoogleNewsDecoder();
-const googleNewsUrl = "https://news.google.com/articles/CBMi...";
+const ocrService = new OCRService();
+const imagePath = path.join(__dirname, 'screenshots', 'your-screenshot.jpeg');
 
-const result = await decoder.decodeGoogleNewsUrl(googleNewsUrl);
-if (result.status) {
-    console.log(`Real URL: ${result.decoded_url}`);
-} else {
-    console.log(`Decode failed: ${result.message}`);
+const ocrResult = await ocrService.processScreenshot(imagePath);
+
+if (ocrResult.success) {
+    console.log('Full Text:', ocrResult.fullText);
+    console.log('Text Blocks:', ocrResult.textBlocks.length);
 }
 ```
-
-### Using the Screenshot Service Directly
-
-```javascript
-const ScreenshotService = require('./screenshot-service');
-
-const screenshotService = new ScreenshotService();
-
-// Capture a single screenshot
-const result = await screenshotService.captureScreenshot(
-    'https://example.com',
-    'article-id',
-    {
-        format: 'png',
-        viewport_width: 1280,
-        viewport_height: 720,
-        blockAds: true,
-        blockCookieBanners: true,
-        blockPopups: true
-    }
-);
-
-if (result.success) {
-    console.log(`Screenshot saved: ${result.fileName}`);
-}
-```
-
-## Performance Benchmarks
-
-**URL Decoding Performance:**
-- **Parallel Processing**: 74% faster than sequential approach
-- **Typical Performance**: ~9.2 seconds for 20 URL decodes (vs ~36 seconds sequential)
-- **Success Rate**: 100% when Google's decoding API is responsive
-- **Batch Processing**: 3-5 URLs processed simultaneously
-- **Memory Efficient**: Only processes required articles + small buffer
-
-**Screenshot Capture Performance:**
-- **High-Performance API**: ScreenshotAPI.net with global CDN delivery
-- **Batch Processing**: 5-10 screenshots captured simultaneously
-- **Smart Rate Limiting**: Automatic throttling to respect API limits
-- **Retry Logic**: Automatic retry on failures with exponential backoff
-- **Format Support**: JPEG, PNG, WebP with optimized compression
-- **Average Capture Time**: ~2-3 seconds per screenshot including processing
-
-**Search Parameters:**
-- `keyword`: Search term (string)
-- `language`: Language code (default: 'en')
-- `country`: Country code (default: 'US') 
-- `maxResults`: Number of articles to return (default: 50)
-- `decodeUrls`: Enable URL decoding (default: true)
-- `captureScreenshots`: Enable screenshot capture (default: false)
-- `screenshotOptions`: Screenshot configuration object
-
-## Development Status
-
-**✅ Production Ready Features:**
-1. ✅ Advanced Google News RSS integration
-2. ✅ High-performance parallel URL decoding
-3. ✅ Intelligent domain extraction with multiple fallback strategies
-4. ✅ Comprehensive deduplication system
-5. ✅ Detailed performance monitoring and statistics
-6. ✅ Robust error handling with graceful fallbacks
-7. ✅ Optimized resource usage and rate limiting
-8. ✅ Automated screenshot capture with content blocking
-9. ✅ ScreenshotAPI.net integration with batch processing
-10. ✅ Configurable screenshot options and file management
-11. ✅ Comprehensive test suite with real-world examples
-
-**🚀 Recent Major Updates:**
-- **NEW**: Integrated ScreenshotAPI.net for automated screenshot capture
-- **NEW**: Added configurable content blocking (ads, cookies, popups)
-- **NEW**: Implemented batch screenshot processing with rate limiting
-- **NEW**: Added comprehensive screenshot file management and cleanup
-- **UPDATED**: Migrated from ScreenshotOne to ScreenshotAPI.net for better performance
-- **IMPROVED**: Enhanced error handling for screenshot capture failures
-- Implemented parallel URL decoding (74% performance improvement)
-- Added intelligent domain extraction with 50+ source mappings
-- Enhanced error handling with meaningful fallbacks
-- Optimized resource usage to only decode required articles
-- Added performance monitoring and detailed statistics
 
 ## Testing
 
-Run the comprehensive test suite:
+This project includes two main test suites to ensure the reliability of its core features.
+
+### Main Test Suite (`test.js`)
+
+Run the comprehensive test suite for the news searcher and screenshot service:
 
 ```bash
 node test.js
 ```
 
-**The test suite demonstrates:**
-- **Parallel URL Decoding**: Performance comparison between old and new approaches
-- **Real URL Extraction**: Converting Google News URLs to actual source URLs
-- **Domain Intelligence**: Accurate domain extraction and mapping
-- **Screenshot Capture**: Automated screenshot generation with content blocking
-- **Multiple Search Topics**: Bitcoin, AI technology, Tesla stock, and more
-- **Performance Monitoring**: Detailed timing and success rate statistics
-- **Deduplication**: Advanced duplicate removal algorithms
-- **Error Handling**: Graceful fallbacks when URL decoding fails
-- **Content Blocking**: Configurable ad, cookie, and popup blocking
-- **Batch Processing**: Efficient parallel processing of screenshots and URLs
+**The `test.js` suite demonstrates:**
+- **Parallel URL Decoding**: Performance comparison between old and new approaches.
+- **Real URL Extraction**: Converting Google News URLs to actual source URLs.
+- **Domain Intelligence**: Accurate domain extraction and mapping.
+- **Screenshot Capture**: Automated screenshot generation with content blocking.
+- **Multiple Search Topics**: Bitcoin, AI technology, Tesla stock, and more.
+- **Performance Monitoring**: Detailed timing and success rate statistics.
+- **Deduplication**: Advanced duplicate removal algorithms.
+- **Error Handling**: Graceful fallbacks when URL decoding fails.
+- **Content Blocking**: Configurable ad, cookie, and popup blocking.
+- **Batch Processing**: Efficient parallel processing of screenshots and URLs.
 
-**Sample Test Output:**
-```
-🚀 Testing Integrated Google News Searcher with URL Decoding
-📊 Attempting to decode 20 URLs...
-🚀 Starting parallel decoding of 20 URLs in batches of 5...
-📦 Processing batch 1: URLs 1-5
-   ✅ Success: wsj.com (1604ms)
-   ✅ Success: theguardian.com (1922ms)
-🎯 All 20 URLs processed in 9213ms (avg: 461ms per URL)
-📊 URL Decoding Stats: 20/20 successful (100% success rate)
+### OCR Test Suite (`test-ocr.js`)
 
-📸 Screenshot Capture Results:
-   ✅ Screenshot: 1751872694924_article-1.jpeg (2.3s)
-   ✅ Screenshot: 1751872697234_article-2.jpeg (1.8s)
-   📊 Screenshot Stats: 5/5 successful (100% success rate)
+Run the test suite for the OCR service:
+
+```bash
+node test-ocr.js
 ```
+
+**The `test-ocr.js` suite demonstrates:**
+- **Google Cloud Vision API Connection**: Verifies that the API key is correctly configured.
+- **Single Image OCR**: Processes a single screenshot and displays detailed results.
+- **Batch OCR**: Processes multiple screenshots to test batch functionality.
+- **Text Preprocessing**: Shows cleaned text, word counts, and other statistics.
+- **Searchable Index**: Demonstrates the creation of a searchable index from the OCR data.
 
 ## Environment Configuration
 
@@ -307,14 +259,17 @@ Create a `.env` file in your project root with the following variables:
 # ScreenshotAPI.net Configuration
 API_KEY_SCREENSHOTAPI=your-screenshotapi-key-here
 
-# Optional: Google OCR API (for future text extraction features)
-GOOGLE_OCR_API_KEY=your-google-ocr-key-here
+# Google Cloud Vision API (for OCR)
+# Path to your Google Cloud service account JSON file
+GOOGLE_APPLICATION_CREDENTIALS=./matchcut-ocr-app-serviceaccount.json
 ```
 
 ### Getting API Keys
 
-1. **ScreenshotAPI.net**: Sign up at [screenshotapi.net](https://screenshotapi.net) to get your API key
-2. **Google OCR API**: Visit [Google Cloud Console](https://console.cloud.google.com) to set up OCR API (optional)
+1.  **ScreenshotAPI.net**: Sign up at [screenshotapi.net](https://screenshotapi.net) to get your API key.
+2.  **Google Cloud Vision API**: Create a service account in the [Google Cloud Console](https://console.cloud.google.com), enable the Cloud Vision API, and download the service account key file (JSON).
+
+**Security Note**: The `matchcut-ocr-app-serviceaccount.json` file contains sensitive credentials. **Do not commit this file to version control.** Ensure it is listed in your `.gitignore` file.
 
 ## License
 
